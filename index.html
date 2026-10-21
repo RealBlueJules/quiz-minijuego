@@ -144,6 +144,12 @@
             <button onclick="restartSystem()" class="border-2 border-cyan-500 bg-cyan-900/20 text-cyan-400 font-bold py-4 px-8 md:px-12 text-sm md:text-xl rounded-lg hover:bg-cyan-900/60 active:bg-cyan-800 transition-all uppercase tracking-wider shadow-[0_0_15px_#00f3ff]">
                 Reiniciar Sistema
             </button>
+
+            <!-- Botón Secreto y Audio -->
+            <button id="btn-dare" onclick="playSecretAudio()" class="hidden mt-6 border-2 border-purple-500 bg-purple-900/20 text-purple-400 font-bold py-3 px-6 text-sm md:text-lg rounded-lg hover:bg-purple-900/60 transition-all uppercase tracking-wider shadow-[0_0_15px_purple] animate-pulse">
+                PRESIÓNALO SI TE ATREVES
+            </button>
+            <audio id="secretAudio" src="sharkdj.mp3.mp4"></audio>
         </div>
     </div>
 
@@ -798,15 +804,20 @@
             
             // Asignar mensaje dinámico basado en aciertos
             const msgEl = document.getElementById('dynamic-message');
+            const dareBtn = document.getElementById('btn-dare');
+
             if (correctCount < 5) {
                 msgEl.innerText = "ESTUDIA MÁS";
                 msgEl.className = "text-xl md:text-3xl font-bold mb-8 text-center px-4 max-w-2xl leading-relaxed uppercase text-red-500 glow-text-red";
+                dareBtn.classList.add('hidden');
             } else if (correctCount >= 5 && correctCount <= 8) {
                 msgEl.innerText = "SIGUE PRACTICANDO";
                 msgEl.className = "text-xl md:text-3xl font-bold mb-8 text-center px-4 max-w-2xl leading-relaxed uppercase text-yellow-400 glow-text-yellow";
+                dareBtn.classList.add('hidden');
             } else {
                 msgEl.innerText = "¡MUY BIEN, ESTÁS PREPARADO PARA EL EXAMEN!";
                 msgEl.className = "text-xl md:text-3xl font-bold mb-8 text-center px-4 max-w-2xl leading-relaxed uppercase text-green-500 glow-text-green";
+                dareBtn.classList.remove('hidden'); // Mostrar botón si acierta 9 o 10
             }
             
             playTone(400, 'sine', 0.2);
@@ -826,10 +837,18 @@
             isAnswering = false;
             clearInterval(timerInterval);
             
+            // Detener audio secreto si está sonando
+            const audio = document.getElementById('secretAudio');
+            if(audio) {
+                audio.pause();
+                audio.currentTime = 0;
+            }
+
             // 2. Limpiar elementos visuales (modales, areas dinámicas)
             document.getElementById('demo-canvas-area').innerHTML = '';
             document.getElementById('demo-canvas-area').onclick = null;
             document.getElementById('final-score').innerText = '0';
+            document.getElementById('btn-dare').classList.add('hidden');
             
             // 3. Ocultar todas las pantallas secundarias y modales
             modalFeedback.classList.add('hidden');
@@ -838,6 +857,14 @@
             
             // 4. Mostrar Pantalla de Inicio
             screens.start.classList.remove('hidden');
+        }
+
+        function playSecretAudio() {
+            const audio = document.getElementById('secretAudio');
+            if(audio) {
+                audio.play().catch(e => console.warn("Interacción requerida para reproducir audio:", e));
+            }
+            document.getElementById('btn-dare').classList.remove('animate-pulse');
         }
     </script>
 </body>
