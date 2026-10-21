@@ -29,6 +29,7 @@
         .glow-text-cyan { text-shadow: 0 0 5px var(--neon-cyan), 0 0 10px var(--neon-cyan); }
         .glow-text-green { text-shadow: 0 0 5px var(--neon-green), 0 0 10px var(--neon-green); }
         .glow-text-red { text-shadow: 0 0 5px var(--neon-red), 0 0 10px var(--neon-red); }
+        .glow-text-yellow { text-shadow: 0 0 5px #facc15, 0 0 10px #facc15; }
 
         .glow-box-cyan {
             border: 2px solid var(--neon-cyan);
@@ -127,15 +128,23 @@
     </div>
 
     <!-- RESULTS SCREEN -->
-    <div id="screen-results" class="hidden flex-1 flex flex-col items-center justify-center p-4 absolute inset-0 z-[70] bg-[#0b0c10]/95 backdrop-blur-sm">
-        <h1 class="text-4xl md:text-5xl font-black mb-4 glow-text-cyan text-center">PRUEBA COMPLETADA</h1>
-        <div class="text-center mb-12 glow-box-cyan p-8 rounded-xl">
-            <p class="text-xl text-cyan-500 mb-2 tracking-widest">PUNTUACIÓN TOTAL</p>
-            <div class="text-6xl font-black text-white glow-text-cyan" id="final-score">0</div>
+    <div id="screen-results" class="hidden flex-1 flex flex-col items-center justify-center p-4 absolute inset-0 z-[70] bg-[#0b0c10]/95 backdrop-blur-sm overflow-y-auto">
+        <div class="my-auto w-full flex flex-col items-center pb-8">
+            <h1 class="text-4xl md:text-5xl font-black mb-4 glow-text-cyan text-center mt-8 md:mt-0">PRUEBA COMPLETADA</h1>
+            
+            <!-- Mensaje Dinámico -->
+            <h2 id="dynamic-message" class="text-xl md:text-3xl font-bold mb-8 text-center px-4 max-w-2xl leading-relaxed uppercase"></h2>
+            
+            <div class="text-center mb-8 glow-box-cyan p-6 md:p-8 rounded-xl w-full max-w-md mx-auto">
+                <p class="text-lg md:text-xl text-cyan-500 mb-2 tracking-widest">PUNTUACIÓN TOTAL</p>
+                <div class="text-5xl md:text-6xl font-black text-white glow-text-cyan" id="final-score">0</div>
+                <p class="text-sm md:text-base text-gray-400 mt-4 border-t border-cyan-900 pt-4">Aciertos: <span id="correct-count-display" class="font-bold text-white text-lg">0</span> / 10</p>
+            </div>
+            
+            <button onclick="restartSystem()" class="border-2 border-cyan-500 bg-cyan-900/20 text-cyan-400 font-bold py-4 px-8 md:px-12 text-sm md:text-xl rounded-lg hover:bg-cyan-900/60 active:bg-cyan-800 transition-all uppercase tracking-wider shadow-[0_0_15px_#00f3ff]">
+                Reiniciar Sistema
+            </button>
         </div>
-        <button onclick="restartSystem()" class="border border-cyan-500 text-cyan-400 font-bold py-3 px-8 rounded hover:bg-cyan-900/40 transition-all uppercase shadow-[0_0_15px_#00f3ff]">
-            Reiniciar Sistema
-        </button>
     </div>
 
     <script>
@@ -378,7 +387,7 @@
                 c: "Software que simula una conversación humana mediante texto o voz.",
                 w: ["Un robot físico ensamblado en fábricas.", "Una red social exclusiva para inteligencia artificial.", "Un script malicioso para robar datos."],
                 demoHTML: `
-                    <div class="w-full max-w-md h-72 border border-cyan-500 bg-[#0b0c10] flex flex-col rounded overflow-hidden shadow-[0_0_20px_rgba(0,243,255,0.2)]">
+                    <div class="w-full max-w-md h-[40vh] min-h-[250px] max-h-[350px] mx-auto border border-cyan-500 bg-[#0b0c10] flex flex-col rounded overflow-hidden shadow-[0_0_20px_rgba(0,243,255,0.2)]">
                         <div class="bg-cyan-900 p-2 text-center text-xs font-bold border-b border-cyan-500 tracking-widest flex items-center justify-between px-4">
                             <span>TRON-BOT v2.0</span>
                             <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
@@ -436,7 +445,7 @@
                 c: "Mostrar boceto interactivo de la App Colegio Justo Sierra.",
                 w: ["Escribir código ensamblador en un papel.", "Usar exclusivamente línea de comandos blanca y negra.", "No es posible dibujarlo en esta plataforma."],
                 demoHTML: `
-                    <div class="w-[320px] h-[480px] border-4 border-gray-700 rounded-[2rem] bg-[#0b0c10] flex flex-col overflow-hidden relative shadow-[0_0_20px_#00f3ff] mt-2 font-sans select-none">
+                    <div class="w-full max-w-[320px] h-[65vh] min-h-[400px] max-h-[500px] mx-auto border-4 border-gray-700 rounded-[2rem] bg-[#0b0c10] flex flex-col overflow-hidden relative shadow-[0_0_20px_#00f3ff] mt-2 font-sans select-none">
                         <!-- Notch simulado -->
                         <div class="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-gray-700 rounded-b-xl z-20"></div>
                         
@@ -640,6 +649,7 @@
 
         let currentQuestionIndex = 0;
         let score = 0;
+        let correctCount = 0;
         let timeLeft = 20;
         let timerInterval;
         let isAnswering = false;
@@ -734,6 +744,7 @@
 
             if (isCorrect) {
                 playCorrect();
+                correctCount++;
                 let pts = Math.round((1000 * timeLeft) / 20);
                 if (pts < 500) pts = 500;
                 score += pts;
@@ -783,6 +794,21 @@
             screens.game.classList.add('hidden');
             screens.results.classList.remove('hidden');
             document.getElementById('final-score').innerText = score;
+            document.getElementById('correct-count-display').innerText = correctCount;
+            
+            // Asignar mensaje dinámico basado en aciertos
+            const msgEl = document.getElementById('dynamic-message');
+            if (correctCount < 5) {
+                msgEl.innerText = "ESTUDIA MÁS";
+                msgEl.className = "text-xl md:text-3xl font-bold mb-8 text-center px-4 max-w-2xl leading-relaxed uppercase text-red-500 glow-text-red";
+            } else if (correctCount >= 5 && correctCount <= 8) {
+                msgEl.innerText = "SIGUE PRACTICANDO";
+                msgEl.className = "text-xl md:text-3xl font-bold mb-8 text-center px-4 max-w-2xl leading-relaxed uppercase text-yellow-400 glow-text-yellow";
+            } else {
+                msgEl.innerText = "¡MUY BIEN, ESTÁS PREPARADO PARA EL EXAMEN!";
+                msgEl.className = "text-xl md:text-3xl font-bold mb-8 text-center px-4 max-w-2xl leading-relaxed uppercase text-green-500 glow-text-green";
+            }
+            
             playTone(400, 'sine', 0.2);
             setTimeout(()=>playTone(600, 'sine', 0.2), 200);
             setTimeout(()=>playTone(800, 'sine', 0.4), 400);
@@ -795,6 +821,7 @@
             // 1. Resetear Variables
             currentQuestionIndex = 0;
             score = 0;
+            correctCount = 0;
             timeLeft = 20;
             isAnswering = false;
             clearInterval(timerInterval);
