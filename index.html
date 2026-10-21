@@ -81,6 +81,12 @@
 </head>
 <body class="min-h-screen flex flex-col antialiased">
 
+    <!-- AUDIO Y CONTROL DE FONDO -->
+    <audio id="bgMusic" src="musicquiz.mp3" loop></audio>
+    <button id="btn-music-toggle" onclick="toggleMusic()" class="fixed top-4 right-4 z-[100] glow-box-cyan text-cyan-400 p-2 md:p-3 rounded-full hover:bg-cyan-900/40 transition-all shadow-[0_0_15px_#00f3ff] w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-[#0b0c10]">
+        <span id="music-icon" class="text-lg md:text-xl">🔇</span>
+    </button>
+
     <!-- START SCREEN -->
     <div id="screen-start" class="flex-1 flex flex-col items-center justify-center p-4 absolute inset-0 z-50 bg-[#0b0c10]/95 backdrop-blur-sm">
         <h1 class="text-4xl md:text-6xl font-black mb-4 glow-text-cyan text-center">QUIZ SISTEMAS</h1>
@@ -179,6 +185,22 @@
         }
         function playCorrect() { initAudio(); playTone(600, 'sine', 0.1); setTimeout(()=>playTone(800, 'square', 0.2), 100); }
         function playWrong() { initAudio(); playTone(250, 'sawtooth', 0.3); setTimeout(()=>playTone(200, 'sawtooth', 0.4), 150); }
+
+        // --- CONTROL DE MÚSICA DE FONDO ---
+        let userMuted = false;
+        function toggleMusic() {
+            const bgMusic = document.getElementById('bgMusic');
+            const musicIcon = document.getElementById('music-icon');
+            if (bgMusic.paused) {
+                bgMusic.play().catch(e => console.warn("Audio play failed:", e));
+                musicIcon.innerText = "🔊";
+                userMuted = false;
+            } else {
+                bgMusic.pause();
+                musicIcon.innerText = "🔇";
+                userMuted = true;
+            }
+        }
 
         // --- PREGUNTAS Y DEMOS ---
         const allQuestions = [
@@ -680,6 +702,16 @@
         function startGame() {
             initAudio();
             playTone(800, 'square', 0.1);
+
+            // Iniciar música de fondo si no ha sido silenciada por el usuario
+            const bgMusic = document.getElementById('bgMusic');
+            const musicIcon = document.getElementById('music-icon');
+            if (!userMuted) {
+                bgMusic.play().then(() => {
+                    musicIcon.innerText = "🔊";
+                }).catch(e => console.warn("El navegador bloqueó el autoplay:", e));
+            }
+
             screens.start.classList.add('hidden');
             screens.game.classList.remove('hidden');
             currentQuestionIndex = 0;
@@ -844,6 +876,13 @@
                 audio.currentTime = 0;
             }
 
+            // Reanudar música de fondo si no estaba muteada
+            const bgMusic = document.getElementById('bgMusic');
+            if (bgMusic && !userMuted) {
+                bgMusic.play().catch(e => console.warn(e));
+                document.getElementById('music-icon').innerText = "🔊";
+            }
+
             // 2. Limpiar elementos visuales (modales, areas dinámicas)
             document.getElementById('demo-canvas-area').innerHTML = '';
             document.getElementById('demo-canvas-area').onclick = null;
@@ -860,6 +899,13 @@
         }
 
         function playSecretAudio() {
+            // Pausar música de fondo para que no se empalme
+            const bgMusic = document.getElementById('bgMusic');
+            if(bgMusic && !bgMusic.paused) {
+                bgMusic.pause();
+                document.getElementById('music-icon').innerText = "🔇";
+            }
+
             const audio = document.getElementById('secretAudio');
             if(audio) {
                 audio.play().catch(e => console.warn("Interacción requerida para reproducir audio:", e));
