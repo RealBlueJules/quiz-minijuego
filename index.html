@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Tron Style</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0b0c10;
+            --neon-cyan: #00f3ff;
+            --neon-green: #39ff14;
+            --neon-red: #ff073a;
+        }
+
+        body {
+            font-family: 'Orbitron', sans-serif;
+            background-color: var(--bg-dark);
+            color: #fff;
+            overflow-x: hidden;
+            background-image: 
+                linear-gradient(rgba(0, 243, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 243, 255, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
+            background-position: center center;
+        }
+
+        .glow-text-cyan { text-shadow: 0 0 5px var(--neon-cyan), 0 0 10px var(--neon-cyan); }
+        .glow-text-green { text-shadow: 0 0 5px var(--neon-green), 0 0 10px var(--neon-green); }
+        .glow-text-red { text-shadow: 0 0 5px var(--neon-red), 0 0 10px var(--neon-red); }
+
+        .glow-box-cyan {
+            border: 2px solid var(--neon-cyan);
+            box-shadow: 0 0 10px var(--neon-cyan), inset 0 0 10px rgba(0, 243, 255, 0.1);
+            background: rgba(11, 12, 16, 0.95);
+        }
+
+        .btn-option {
+            background: rgba(0, 243, 255, 0.05);
+            border: 1px solid var(--neon-cyan);
+            transition: all 0.2s ease;
+        }
+        
+        .btn-option:hover {
+            background: rgba(0, 243, 255, 0.2);
+            box-shadow: 0 0 15px var(--neon-cyan);
+        }
+
+        .btn-correct {
+            border-color: var(--neon-green) !important;
+            box-shadow: 0 0 20px var(--neon-green), inset 0 0 10px var(--neon-green) !important;
+            background: rgba(57, 255, 20, 0.2) !important;
+        }
+
+        .btn-incorrect {
+            border-color: var(--neon-red) !important;
+            box-shadow: 0 0 20px var(--neon-red), inset 0 0 10px var(--neon-red) !important;
+            background: rgba(255, 7, 58, 0.2) !important;
+        }
+
+        /* Demo Specific Styles */
+        .demo-container { min-height: 200px; }
+        .struct-box { transition: all 0.3s; border: 2px solid #555; padding: 15px; margin: 10px; cursor: pointer; }
+        .struct-box:hover { border-color: var(--neon-cyan); box-shadow: 0 0 10px var(--neon-cyan); }
+        
+        @keyframes bounce-x {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(200px); }
+        }
+        .animate-bounce-x { animation: bounce-x 2s infinite linear; }
+        .animate-fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Custom Scrollbar for Chat and App Mockup */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: var(--neon-cyan); border-radius: 3px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased">
+
+    <!-- START SCREEN -->
+    <div id="screen-start" class="flex-1 flex flex-col items-center justify-center p-4 absolute inset-0 z-50 bg-[#0b0c10]/95 backdrop-blur-sm">
+        <h1 class="text-4xl md:text-6xl font-black mb-4 glow-text-cyan text-center">QUIZ SISTEMAS</h1>
+        <p class="text-xl text-cyan-400 mb-12 tracking-widest text-center">Protocolo Interactivo Tron</p>
+        <button onclick="startGame()" class="glow-box-cyan text-cyan-400 font-bold text-2xl py-4 px-12 rounded hover:bg-cyan-900/40 transition-all uppercase tracking-widest">
+            INICIAR
+        </button>
+    </div>
+
+    <!-- GAME INTERFACE -->
+    <div id="screen-game" class="flex-1 flex flex-col hidden w-full min-h-screen absolute inset-0 z-40 p-4 bg-[#0b0c10]">
+        <header class="flex justify-between items-center mb-6 glow-box-cyan p-4 rounded">
+            <div class="text-cyan-400 font-bold tracking-widest">SEQ: <span id="q-counter">1</span>/10</div>
+            <div class="text-cyan-400 font-bold tracking-widest flex items-center gap-4">
+                <span>TIME: <span id="timer-text" class="text-2xl">20</span></span>
+                <span>PTS: <span id="score-display">0</span></span>
+            </div>
+        </header>
+
+        <div class="flex-1 flex flex-col items-center justify-center text-center mb-8">
+            <h2 id="question-text" class="text-xl md:text-3xl font-bold max-w-4xl glow-text-cyan leading-relaxed">¿Pregunta?</h2>
+        </div>
+
+        <div id="answers-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 pb-8 max-w-5xl mx-auto w-full">
+            <!-- Respuestas generadas via JS -->
+        </div>
+    </div>
+
+    <!-- FEEDBACK MODAL CON DEMO -->
+    <div id="modal-feedback" class="hidden fixed inset-0 z-[60] bg-black/95 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+        <div class="glow-box-cyan p-4 md:p-6 max-w-3xl w-full text-center rounded flex flex-col gap-4 my-auto">
+            <h3 id="feedback-result" class="text-2xl md:text-3xl font-black uppercase tracking-widest">RESULTADO</h3>
+            
+            <div class="bg-black border border-cyan-500/50 p-2 md:p-4 rounded text-left flex flex-col items-center demo-container">
+                <p class="text-xs md:text-sm text-cyan-500 mb-2 font-bold tracking-widest w-full text-center border-b border-cyan-900 pb-2">ENTORNO DE SIMULACIÓN ACTIVO</p>
+                <div id="demo-canvas-area" class="w-full flex justify-center items-center flex-col py-2">
+                    <!-- Demo se inyecta aquí -->
+                </div>
+            </div>
+            
+            <button onclick="nextStep()" class="glow-box-cyan text-cyan-400 font-bold py-3 px-8 rounded hover:bg-cyan-900/40 transition-all uppercase w-full md:w-auto mx-auto mt-2">
+                CONTINUAR SECUENCIA
+            </button>
+        </div>
+    </div>
+
+    <!-- RESULTS SCREEN -->
+    <div id="screen-results" class="hidden flex-1 flex flex-col items-center justify-center p-4 absolute inset-0 z-[70] bg-[#0b0c10]/95 backdrop-blur-sm">
+        <h1 class="text-4xl md:text-5xl font-black mb-4 glow-text-cyan text-center">PRUEBA COMPLETADA</h1>
+        <div class="text-center mb-12 glow-box-cyan p-8 rounded-xl">
+            <p class="text-xl text-cyan-500 mb-2 tracking-widest">PUNTUACIÓN TOTAL</p>
+            <div class="text-6xl font-black text-white glow-text-cyan" id="final-score">0</div>
+        </div>
+        <button onclick="restartSystem()" class="border border-cyan-500 text-cyan-400 font-bold py-3 px-8 rounded hover:bg-cyan-900/40 transition-all uppercase shadow-[0_0_15px_#00f3ff]">
+            Reiniciar Sistema
+        </button>
+    </div>
+
+    <script>
+        // --- AUDIO SYSTEM ---
+        let audioCtx;
+        function initAudio() {
+            if(!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+        }
+        function playTone(freq, type, duration, vol = 0.1) {
+            if(!audioCtx) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+                osc.stop(audioCtx.currentTime + duration);
+            } catch(e) { console.warn("Audio play failed"); }
+        }
+        function playCorrect() { initAudio(); playTone(600, 'sine', 0.1); setTimeout(()=>playTone(800, 'square', 0.2), 100); }
+        function playWrong() { initAudio(); playTone(250, 'sawtooth', 0.3); setTimeout(()=>playTone(200, 'sawtooth', 0.4), 150); }
+
+        // --- PREGUNTAS Y DEMOS ---
+        const allQuestions = [
+            {
+                q: "¿Qué es una interfaz gráfica de usuario (GUI)?",
+                c: "Entorno visual para interactuar con la computadora.",
+                w: ["Un entorno basado exclusivamente en comandos CMD.", "Una placa base diseñada para procesar video.", "Una red interna."],
+                demoHTML: `
+                    <div id="demo1-box" class="w-24 h-24 bg-cyan-500 mb-4 shadow-[0_0_15px_#00f3ff] transition-all rounded"></div>
+                    <div class="flex gap-4 items-center bg-gray-900 p-4 rounded border border-cyan-800 flex-wrap justify-center">
+                        <label class="text-xs">Tamaño:</label>
+                        <input type="range" id="demo1-slider" min="50" max="150" value="96" class="accent-cyan-500">
+                        <label class="text-xs ml-4">Color:</label>
+                        <input type="color" id="demo1-color" value="#00f3ff" class="bg-transparent border-none w-8 h-8 cursor-pointer">
+                    </div>`,
+                initDemo: () => {
+                    const box = document.getElementById('demo1-box');
+                    document.getElementById('demo1-slider').oninput = (e) => box.style.width = e.target.value + 'px';
+                    document.getElementById('demo1-color').oninput = (e) => { 
+                        box.style.backgroundColor = e.target.value; 
+                        box.style.boxShadow = `0 0 15px ${e.target.value}`;
+                    };
+                }
+            },
+            {
+                q: "¿Qué lenguajes de programación podemos usar para el desarrollo de interfaces gráficas de usuario?",
+                c: "C++, Python, JavaScript, Java, etc.",
+                w: ["Únicamente lenguaje ensamblador.", "Software como Photoshop y Figma.", "Protocolos como HTTP y FTP."],
+                demoHTML: `
+                    <div class="flex gap-2 mb-2 flex-wrap justify-center">
+                        <button id="btn-cpp" class="px-3 py-1 bg-cyan-900 text-white text-xs border border-cyan-500 rounded">C++ (Qt)</button>
+                        <button id="btn-py" class="px-3 py-1 bg-gray-800 text-white text-xs border border-gray-600 rounded">Python (Tkinter)</button>
+                        <button id="btn-js" class="px-3 py-1 bg-gray-800 text-white text-xs border border-gray-600 rounded">JS (DOM)</button>
+                    </div>
+                    <pre id="code-view" class="bg-[#0b0c10] p-4 rounded text-left text-xs md:text-sm text-green-400 w-full font-mono border border-gray-700 overflow-x-auto">QPushButton *btn = new QPushButton("Click");\nbtn->show();</pre>
+                `,
+                initDemo: () => {
+                    const view = document.getElementById('code-view');
+                    const btns = ['cpp', 'py', 'js'];
+                    const codes = {
+                        'cpp': 'QPushButton *btn = new QPushButton("Click");\nbtn->show();',
+                        'py': 'import tkinter as tk\nroot = tk.Tk()\nbtn = tk.Button(root, text="Click")\nbtn.pack()\nroot.mainloop()',
+                        'js': 'const btn = document.createElement("button");\nbtn.innerText = "Click";\ndocument.body.appendChild(btn);'
+                    };
+                    btns.forEach(id => {
+                        document.getElementById('btn-'+id).onclick = (e) => {
+                            btns.forEach(b => {
+                                document.getElementById('btn-'+b).className = "px-3 py-1 bg-gray-800 text-white text-xs border border-gray-600 rounded";
+                            });
+                            e.target.className = "px-3 py-1 bg-cyan-900 text-white text-xs border border-cyan-500 rounded";
+                            view.innerText = codes[id];
+                        };
+                    });
+                }
+            },
+            {
+                q: "¿Cuál es la estructura básica de una aplicación gráfica?",
+                c: "Ventana principal, contenedores y widgets/controles.",
+                w: ["Base de datos local y servidor externo.", "Disco duro, procesador y memoria RAM.", "Condicionales IF y bucles FOR."],
+                demoHTML: `
+                    <div class="struct-box w-64 text-center text-xs border-cyan-700 bg-gray-900" title="Window">Ventana Principal (Window)
+                        <div class="struct-box border-purple-500 bg-black" title="Container">Contenedor (Layout)
+                            <div class="struct-box bg-cyan-900/50 text-cyan-300 border-cyan-400 shadow-[0_0_10px_#00f3ff]" title="Widget">Widget (Botón)</div>
+                        </div>
+                    </div>
+                `,
+                initDemo: () => {}
+            },
+            {
+                q: "¿Qué significa compilar una aplicación?",
+                c: "Traducir código fuente a lenguaje máquina.",
+                w: ["Comprimir archivos en un formato ZIP o RAR.", "Subir el código a un servidor en la nube.", "Diseñar los colores y formas de la interfaz."],
+                demoHTML: `
+                    <div class="w-full flex flex-col items-center">
+                        <div id="compile-text" class="font-mono text-cyan-300 bg-[#0b0c10] p-4 w-full h-24 overflow-hidden text-xs text-left mb-2 border border-cyan-900 rounded">int main() {\n  printf("Hello System");\n  return 0;\n}</div>
+                        <div class="w-full bg-gray-800 h-2 mb-4 rounded overflow-hidden border border-gray-600"><div id="compile-bar" class="bg-neon-green h-full w-0 transition-all duration-200"></div></div>
+                        <button id="btn-compile" class="px-6 py-2 bg-cyan-800 text-white border border-cyan-400 text-xs font-bold rounded shadow-[0_0_10px_#00f3ff]">INICIAR COMPILACIÓN</button>
+                    </div>
+                `,
+                initDemo: () => {
+                    document.getElementById('btn-compile').onclick = () => {
+                        const txt = document.getElementById('compile-text');
+                        const bar = document.getElementById('compile-bar');
+                        document.getElementById('btn-compile').disabled = true;
+                        let p = 0;
+                        const intv = setInterval(() => {
+                            p += 10; bar.style.width = p+'%';
+                            txt.innerText = Array.from({length: 80}).map(()=>Math.random()>0.5?'1':'0').join('');
+                            txt.style.color = '#39ff14';
+                            if(p>=100) { 
+                                clearInterval(intv); 
+                                txt.innerText = "COMPILACIÓN EXITOSA\n[01000001 01010000 01010000]\nEJECUTABLE GENERADO"; 
+                                playTone(1200, 'sine', 0.1);
+                            }
+                        }, 150);
+                    };
+                }
+            },
+            {
+                q: "¿Qué significa ejecutar una aplicación?",
+                c: "Poner en marcha el programa en la memoria y CPU.",
+                w: ["Borrar permanentemente la aplicación del disco.", "Descargar el código desde un repositorio.", "Escribir las líneas en el editor de texto."],
+                demoHTML: `
+                    <div class="w-64 h-32 border-2 border-cyan-600 bg-[#0b0c10] relative overflow-hidden mb-4 rounded-lg flex items-center justify-center">
+                        <span class="text-xs text-gray-600 absolute top-2 left-2 font-mono">RAM ALLOCATED</span>
+                        <div id="exec-ball" class="w-8 h-8 bg-green-500 rounded-sm shadow-[0_0_15px_#39ff14] absolute top-12 left-4 hidden flex items-center justify-center text-[10px] text-black font-bold">APP</div>
+                    </div>
+                    <button id="btn-run" class="px-6 py-2 bg-green-900 text-white border border-green-400 font-bold rounded text-xs shadow-[0_0_15px_#39ff14]">EJECUTAR (RUN)</button>
+                `,
+                initDemo: () => {
+                    document.getElementById('btn-run').onclick = () => {
+                        const ball = document.getElementById('exec-ball');
+                        ball.classList.remove('hidden');
+                        ball.classList.add('animate-bounce-x');
+                        playTone(400, 'square', 0.1);
+                    };
+                }
+            },
+            {
+                q: "¿Qué es un evento?",
+                c: "Una acción o suceso detectado por el programa, como un clic.",
+                w: ["Un error fatal en el sistema operativo.", "El proceso físico de encender la computadora.", "Un ciclo repetitivo en la tarjeta de red."],
+                demoHTML: `
+                    <div class="flex flex-col md:flex-row gap-4 w-full">
+                        <div id="event-target" class="w-full md:w-32 h-32 bg-cyan-900 border-2 border-cyan-400 flex flex-col items-center justify-center cursor-pointer select-none text-xs text-center shadow-[0_0_15px_#00f3ff] rounded hover:bg-cyan-700 transition-colors">
+                            <span class="text-2xl mb-1">🖱️</span>
+                            Interactúa<br>(Click, Hover)
+                        </div>
+                        <div class="flex-1 bg-[#0b0c10] border border-gray-600 p-3 h-32 overflow-y-auto text-xs font-mono text-left rounded" id="event-log">
+                            <span class="text-gray-500">Esperando eventos...</span><br>
+                        </div>
+                    </div>
+                `,
+                initDemo: () => {
+                    const tgt = document.getElementById('event-target');
+                    const log = document.getElementById('event-log');
+                    let evCount = 0;
+                    const addLog = (e) => { 
+                        if(evCount === 0) log.innerHTML = '';
+                        evCount++;
+                        const color = e.type === 'click' ? 'text-cyan-400' : 'text-green-400';
+                        log.innerHTML = `<span class="${color}">> [${evCount}] Evento detectado: <strong>${e.type}</strong></span><br>` + log.innerHTML; 
+                        if(e.type==='click') playTone(800, 'sine', 0.05);
+                    };
+                    tgt.onmouseenter = addLog; 
+                    tgt.onmouseleave = addLog; 
+                    tgt.onclick = addLog; 
+                    tgt.ondblclick = addLog;
+                }
+            },
+            {
+                q: "¿Qué es una aplicación?",
+                c: "Software diseñado para realizar una tarea específica para el usuario.",
+                w: ["El componente principal o tarjeta madre.", "Un tipo de virus informático destructivo.", "El sistema operativo base (como Windows o Linux)."],
+                demoHTML: `
+                    <div class="w-48 h-64 border-4 border-gray-700 rounded-2xl bg-black p-3 flex flex-col shadow-[0_0_20px_rgba(255,255,255,0.1)]">
+                        <div class="text-center text-[10px] text-gray-500 mb-2 font-mono">App Calculadora</div>
+                        <input type="text" id="calc-disp" class="w-full bg-cyan-950 text-right p-2 text-cyan-200 mb-3 border border-cyan-800 rounded font-mono text-lg" disabled value="0">
+                        <div class="grid grid-cols-4 gap-1 flex-1" id="calc-btns">
+                            <!-- JS injected -->
+                        </div>
+                    </div>
+                `,
+                initDemo: () => {
+                    const disp = document.getElementById('calc-disp');
+                    const btns = document.getElementById('calc-btns');
+                    const keys = ['7','8','9','/','4','5','6','*','1','2','3','-','C','0','=','+'];
+                    let eq = "";
+                    keys.forEach(k => {
+                        const b = document.createElement('button');
+                        b.className = "bg-gray-800 text-cyan-400 text-xs border border-gray-600 rounded active:bg-cyan-700 font-bold";
+                        if(k==='C') b.className += " bg-red-900/50 text-red-400 border-red-800";
+                        if(k==='=') b.className += " bg-green-900/50 text-green-400 border-green-800";
+                        b.innerText = k;
+                        b.onclick = () => {
+                            playTone(400, 'sine', 0.02);
+                            if(k==='C') { eq=""; disp.value="0"; }
+                            else if(k==='=') { try { eq = eval(eq).toString(); disp.value = eq; } catch(e){ disp.value="Err"; eq="";} }
+                            else { eq+=k; disp.value=eq; }
+                        };
+                        btns.appendChild(b);
+                    });
+                }
+            },
+            {
+                q: "¿Qué es una API?",
+                c: "Conjunto de reglas que permiten a dos aplicaciones comunicarse.",
+                w: ["Una aplicación para generar Inteligencia Artificial.", "Un antivirus preinstalado en la memoria ROM.", "Un lenguaje de programación visual por bloques."],
+                demoHTML: `
+                    <button id="btn-api" class="px-6 py-3 bg-purple-900 border border-purple-400 rounded text-white text-xs font-bold mb-4 shadow-[0_0_15px_purple] hover:bg-purple-700 transition-colors">
+                        🌐 HACER PETICIÓN API (GET DATA)
+                    </button>
+                    <div id="api-result" class="w-full bg-[#0b0c10] font-mono text-xs text-left p-4 border border-purple-800 text-purple-300 min-h-[100px] rounded overflow-hidden">
+                        > Esperando solicitud del cliente...
+                    </div>
+                `,
+                initDemo: () => {
+                    document.getElementById('btn-api').onclick = () => {
+                        const res = document.getElementById('api-result');
+                        res.innerHTML = '<span class="animate-pulse text-yellow-400">> ESTABLECIENDO CONEXIÓN...<br>> ENVIANDO GET REQUEST...</span>';
+                        playTone(300, 'sawtooth', 0.1);
+                        setTimeout(() => {
+                            res.innerHTML = '<span class="text-green-400">200 OK</span>\n{\n  "status": "success",\n  "data": {\n    "user": "Estudiante",\n    "server": "Tron-Node",\n    "connection": "Secured"\n  }\n}';
+                            playTone(800, 'sine', 0.1);
+                            setTimeout(()=>playTone(1200, 'sine', 0.1), 100);
+                        }, 1500);
+                    };
+                }
+            },
+            {
+                q: "¿Qué es un chatbot?",
+                c: "Software que simula una conversación humana mediante texto o voz.",
+                w: ["Un robot físico ensamblado en fábricas.", "Una red social exclusiva para inteligencia artificial.", "Un script malicioso para robar datos."],
+                demoHTML: `
+                    <div class="w-full max-w-md h-72 border border-cyan-500 bg-[#0b0c10] flex flex-col rounded overflow-hidden shadow-[0_0_20px_rgba(0,243,255,0.2)]">
+                        <div class="bg-cyan-900 p-2 text-center text-xs font-bold border-b border-cyan-500 tracking-widest flex items-center justify-between px-4">
+                            <span>TRON-BOT v2.0</span>
+                            <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                        </div>
+                        <div id="chat-box" class="flex-1 p-3 overflow-y-auto flex flex-col gap-3 text-xs text-left font-sans">
+                            <div class="bg-gray-800 text-green-400 p-2 rounded-br-none rounded max-w-[85%] self-start border border-green-900 shadow-[0_0_5px_#39ff14]">
+                                Bot: Hola. Sistema en línea. Pregúntame sobre el clima, programación, o mi identidad.
+                            </div>
+                        </div>
+                        <div class="flex border-t border-cyan-800 bg-gray-900 p-2 gap-2">
+                            <input type="text" id="chat-in" class="flex-1 bg-black text-white p-2 text-xs outline-none border border-cyan-800 rounded focus:border-cyan-400 transition-colors font-sans" placeholder="Escribe 'hola'...">
+                            <button id="chat-send" class="bg-cyan-700 hover:bg-cyan-500 px-4 rounded text-xs font-bold transition-colors">ENVIAR</button>
+                        </div>
+                    </div>
+                `,
+                initDemo: () => {
+                    const btn = document.getElementById('chat-send');
+                    const inp = document.getElementById('chat-in');
+                    const box = document.getElementById('chat-box');
+                    
+                    const sendMessage = () => {
+                        const text = inp.value.trim();
+                        if(!text) return;
+                        
+                        box.innerHTML += `<div class="bg-cyan-900 text-white p-2 rounded-bl-none rounded max-w-[85%] self-end border border-cyan-500 shadow-[0_0_5px_#00f3ff] font-sans animate-fade-in">${text}</div>`;
+                        inp.value = '';
+                        box.scrollTop = box.scrollHeight;
+                        
+                        setTimeout(() => {
+                            let reply = "No procesé esa sintaxis. Intenta usar palabras como: 'hola', 'clima', 'codigo'.";
+                            const lower = text.toLowerCase();
+                            
+                            if(lower.includes("hola") || lower.includes("saludos")) {
+                                reply = "¡Saludos, usuario! Mis circuitos están a tu disposición.";
+                            } else if(lower.includes("clima") || lower.includes("tiempo")) {
+                                reply = "Lecturas actuales: 22°C en el servidor. Pronóstico: Lluvias de datos.";
+                            } else if(lower.includes("codigo") || lower.includes("programaci")) {
+                                reply = "La programación construye nuestra realidad virtual. ¡Sigue codificando!";
+                            } else if(lower.includes("quien eres") || lower.includes("nombre")) {
+                                reply = "Soy TRON-BOT, una entidad lógica residente en esta GUI.";
+                            }
+                            
+                            box.innerHTML += `<div class="bg-gray-800 text-green-400 p-2 rounded-br-none rounded max-w-[85%] self-start border border-green-900 shadow-[0_0_5px_#39ff14] font-sans animate-fade-in">Bot: ${reply}</div>`;
+                            box.scrollTop = box.scrollHeight;
+                            playTone(600, 'sine', 0.1);
+                        }, 600 + Math.random() * 500); 
+                    };
+                    
+                    btn.onclick = sendMessage;
+                    inp.onkeypress = (e) => { if(e.key === 'Enter') sendMessage(); };
+                }
+            },
+            {
+                q: "Dibuja la pantalla principal de una aplicación que tu quieras desarrollar en el tercer parcial.",
+                c: "Mostrar boceto interactivo de la App Colegio Justo Sierra.",
+                w: ["Escribir código ensamblador en un papel.", "Usar exclusivamente línea de comandos blanca y negra.", "No es posible dibujarlo en esta plataforma."],
+                demoHTML: `
+                    <div class="w-[320px] h-[480px] border-4 border-gray-700 rounded-[2rem] bg-[#0b0c10] flex flex-col overflow-hidden relative shadow-[0_0_20px_#00f3ff] mt-2 font-sans select-none">
+                        <!-- Notch simulado -->
+                        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-gray-700 rounded-b-xl z-20"></div>
+                        
+                        <!-- Cabecera App -->
+                        <div class="bg-gradient-to-b from-cyan-900 to-[#0b0c10] p-4 pt-8 text-center relative z-10 border-b border-cyan-900">
+                            <h2 class="text-cyan-400 font-black text-lg uppercase tracking-wider font-orbitron">Colegio Justo Sierra</h2>
+                            <p class="text-gray-400 text-[10px] italic">"Educar para la vida"</p>
+                        </div>
+                        
+                        <!-- Área de Contenido Dinámico (Router Viewer) -->
+                        <div id="app-content" class="flex-1 overflow-y-auto p-4 relative z-10 bg-[#0b0c10]">
+                            <!-- Inyectado por JS -->
+                        </div>
+                        
+                        <!-- Barra de Navegación Inferior -->
+                        <div class="flex justify-around bg-[#0b0c10] border-t border-cyan-800 p-1 pb-3 z-10">
+                            <button data-target="home" class="nav-btn flex flex-col items-center p-2 text-cyan-500 border-t-2 border-cyan-500 -mt-[1px] transition-colors w-1/3">
+                                <span class="text-xl mb-1">🏠</span><span class="text-[9px] font-bold font-orbitron">INICIO</span>
+                            </button>
+                            <button data-target="grades" class="nav-btn flex flex-col items-center p-2 text-gray-500 hover:text-cyan-300 transition-colors w-1/3 border-t-2 border-transparent">
+                                <span class="text-xl mb-1">📊</span><span class="text-[9px] font-bold font-orbitron">NOTAS</span>
+                            </button>
+                            <button data-target="map" class="nav-btn flex flex-col items-center p-2 text-gray-500 hover:text-cyan-300 transition-colors w-1/3 border-t-2 border-transparent">
+                                <span class="text-xl mb-1">🗺️</span><span class="text-[9px] font-bold font-orbitron">MAPA</span>
+                            </button>
+                        </div>
+                    </div>
+                `,
+                initDemo: () => {
+                    const content = document.getElementById('app-content');
+                    
+                    // Definición de las Vistas (Routing simulado)
+                    const views = {
+                        home: `
+                            <div class="text-center animate-fade-in pb-4">
+                                <div class="w-16 h-16 mx-auto rounded-full bg-gray-800 border-2 border-cyan-500 mb-2 flex items-center justify-center shadow-[0_0_10px_#00f3ff]">
+                                    <span class="text-3xl">👨‍💻</span>
+                                </div>
+                                <h3 class="text-white text-sm font-bold">Ing. Sistemas Computacionales</h3>
+                                <p class="text-cyan-500 text-[10px] mt-1">Semestre 4 - Grupo A</p>
+                                
+                                <div class="mt-6 grid grid-cols-2 gap-3">
+                                    <button data-target="schedule" class="bg-gray-900 border border-cyan-800 p-3 rounded-xl text-xs flex flex-col items-center hover:bg-cyan-900/50 hover:border-cyan-500 transition-all shadow-md">
+                                        <span class="text-2xl mb-2">📅</span> Horario
+                                    </button>
+                                    <button data-target="payments" class="bg-gray-900 border border-cyan-800 p-3 rounded-xl text-xs flex flex-col items-center hover:bg-cyan-900/50 hover:border-cyan-500 transition-all shadow-md">
+                                        <span class="text-2xl mb-2">💳</span> Pagos
+                                    </button>
+                                    <button data-target="materials" class="bg-gray-900 border border-cyan-800 p-3 rounded-xl text-xs flex flex-col items-center hover:bg-cyan-900/50 hover:border-cyan-500 transition-all shadow-md">
+                                        <span class="text-2xl mb-2">🔌</span> Materiales
+                                    </button>
+                                    <button class="bg-gray-900 border border-cyan-800 p-3 rounded-xl text-xs flex flex-col items-center hover:bg-cyan-900/50 transition-all shadow-md opacity-50 cursor-not-allowed">
+                                        <span class="text-2xl mb-2">✉️</span> Avisos
+                                    </button>
+                                </div>
+                            </div>
+                        `,
+                        grades: `
+                            <div class="animate-fade-in pb-4">
+                                <h3 class="text-cyan-400 text-xs font-bold mb-4 font-orbitron uppercase tracking-wide border-b border-cyan-800 pb-2 text-center">Boleta de Calificaciones</h3>
+                                <div class="flex flex-col gap-2">
+                                    <div class="bg-gray-900 p-2 rounded-lg border-l-4 border-l-green-500 flex justify-between items-center">
+                                        <div class="flex flex-col"><span class="text-gray-200 text-xs font-bold">Prog. Visual</span><span class="text-gray-500 text-[9px]">Prof. Martínez</span></div>
+                                        <span class="text-green-400 font-black text-sm bg-green-900/30 px-2 py-1 rounded">9.5</span>
+                                    </div>
+                                    <div class="bg-gray-900 p-2 rounded-lg border-l-4 border-l-yellow-500 flex justify-between items-center">
+                                        <div class="flex flex-col"><span class="text-gray-200 text-xs font-bold">Bases de Datos</span><span class="text-gray-500 text-[9px]">Ing. Gómez</span></div>
+                                        <span class="text-yellow-400 font-black text-sm bg-yellow-900/30 px-2 py-1 rounded">8.5</span>
+                                    </div>
+                                    <div class="bg-gray-900 p-2 rounded-lg border-l-4 border-l-green-500 flex justify-between items-center">
+                                        <div class="flex flex-col"><span class="text-gray-200 text-xs font-bold">Redes de Comp.</span><span class="text-gray-500 text-[9px]">Dr. López</span></div>
+                                        <span class="text-green-400 font-black text-sm bg-green-900/30 px-2 py-1 rounded">10.0</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `,
+                        map: `
+                            <div class="animate-fade-in h-full flex flex-col pb-4">
+                                <h3 class="text-cyan-400 text-xs font-bold mb-2 font-orbitron uppercase text-center">Mapa del Campus</h3>
+                                <div class="relative flex-1 bg-[#1a1c23] rounded-xl border border-cyan-800 overflow-hidden text-[8px] font-bold shadow-inner min-h-[220px]">
+                                    <div class="absolute top-2 left-2 w-20 h-20 bg-blue-900/80 border border-blue-400 flex flex-col items-center justify-center text-center p-1 rounded">
+                                        <span class="text-lg mb-1">🏫</span>Edificio A<br><span class="font-normal text-[7px] text-blue-200">Sistemas</span>
+                                    </div>
+                                    <div class="absolute top-6 right-2 w-20 h-16 bg-purple-900/80 border-2 border-purple-400 flex flex-col items-center justify-center text-center p-1 rounded shadow-[0_0_10px_purple] z-10">
+                                        <span class="text-lg mb-1">💻</span>Laboratorios
+                                    </div>
+                                    <div class="absolute bottom-2 left-2 w-16 h-14 bg-green-900/80 border border-green-400 flex flex-col items-center justify-center text-center p-1 rounded">
+                                        <span class="text-base mb-1">📚</span>Biblioteca
+                                    </div>
+                                    <div class="absolute bottom-4 right-4 w-12 h-12 bg-orange-900/80 border border-orange-400 flex flex-col items-center justify-center text-center p-1 rounded-full">
+                                        <span class="text-base">☕</span>Café
+                                    </div>
+                                    <svg class="absolute inset-0 w-full h-full pointer-events-none" style="z-index: 0;">
+                                        <path d="M 50 80 L 50 140 L 120 140" stroke="#4a5568" stroke-width="6" fill="none" stroke-linecap="round" />
+                                        <path d="M 180 80 L 180 120 L 120 140 L 200 180" stroke="#4a5568" stroke-width="6" fill="none" stroke-linecap="round" />
+                                    </svg>
+                                </div>
+                            </div>
+                        `,
+                        schedule: `
+                            <div class="animate-fade-in pb-4">
+                                <button data-target="home" class="text-cyan-500 text-[10px] font-bold mb-3 flex items-center hover:text-cyan-300"><span class="mr-1">⬅</span> Volver a Inicio</button>
+                                <h3 class="text-cyan-400 text-xs font-bold mb-3 font-orbitron uppercase text-center border-b border-cyan-800 pb-2">Horario - Sistemas</h3>
+                                <div class="space-y-2 text-[10px]">
+                                    <div class="bg-gray-900 p-2 rounded border-l-2 border-cyan-500 flex justify-between items-center">
+                                        <div><strong class="text-cyan-300 block mb-1">07:00 - 09:00</strong><span class="text-white">Estructura de Datos</span></div>
+                                        <span class="bg-black px-2 py-1 rounded text-gray-400">Lab 1</span>
+                                    </div>
+                                    <div class="bg-gray-900 p-2 rounded border-l-2 border-purple-500 flex justify-between items-center">
+                                        <div><strong class="text-purple-300 block mb-1">09:00 - 11:00</strong><span class="text-white">Sistemas Operativos</span></div>
+                                        <span class="bg-black px-2 py-1 rounded text-gray-400">Aula A4</span>
+                                    </div>
+                                    <div class="bg-gray-900 p-2 rounded border-l-2 border-green-500 flex justify-between items-center">
+                                        <div><strong class="text-green-300 block mb-1">11:30 - 13:30</strong><span class="text-white">Interfaz Gráfica</span></div>
+                                        <span class="bg-black px-2 py-1 rounded text-gray-400">Lab Mac</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `,
+                        payments: `
+                            <div class="animate-fade-in pb-4">
+                                <button data-target="home" class="text-cyan-500 text-[10px] font-bold mb-3 flex items-center hover:text-cyan-300"><span class="mr-1">⬅</span> Volver a Inicio</button>
+                                <h3 class="text-cyan-400 text-xs font-bold mb-3 font-orbitron uppercase text-center border-b border-cyan-800 pb-2">Estado de Cuenta</h3>
+                                <div class="space-y-2 text-[10px]">
+                                    <div class="bg-gray-900 p-3 rounded border border-green-800/50 flex justify-between items-center">
+                                        <span class="text-white">Inscripción Semestral</span> 
+                                        <span class="text-green-500 bg-green-900/30 px-2 py-1 rounded font-bold">Pagado</span>
+                                    </div>
+                                    <div class="bg-gray-900 p-3 rounded border border-green-800/50 flex justify-between items-center">
+                                        <span class="text-white">Colegiatura Septiembre</span> 
+                                        <span class="text-green-500 bg-green-900/30 px-2 py-1 rounded font-bold">Pagado</span>
+                                    </div>
+                                    <div class="bg-black p-3 rounded border border-red-500 flex flex-col shadow-[0_0_8px_rgba(255,0,0,0.3)] mt-4">
+                                        <div class="flex justify-between items-center mb-2">
+                                            <span class="text-white font-bold">Colegiatura Octubre</span> 
+                                            <span class="text-red-400 font-bold">$2,500 MXN</span>
+                                        </div>
+                                        <span class="text-red-500 text-[9px] mb-2">Vence en 5 días</span>
+                                        <button class="w-full bg-cyan-700 hover:bg-cyan-500 p-2 rounded text-white font-bold transition-colors shadow-[0_0_10px_#00f3ff]">Pagar con Tarjeta</button>
+                                    </div>
+                                </div>
+                            </div>
+                        `,
+                        materials: `
+                            <div class="animate-fade-in pb-4">
+                                <button data-target="home" class="text-cyan-500 text-[10px] font-bold mb-3 flex items-center hover:text-cyan-300"><span class="mr-1">⬅</span> Volver a Inicio</button>
+                                <h3 class="text-cyan-400 text-xs font-bold mb-3 font-orbitron uppercase text-center border-b border-cyan-800 pb-2">Lista de Materiales</h3>
+                                <p class="text-[9px] text-gray-400 mb-3">Requeridos para el laboratorio de Electrónica y Sistemas Embebidos:</p>
+                                <ul class="text-[11px] space-y-2 text-white">
+                                    <li class="bg-gray-900 p-2 border border-cyan-800 rounded flex items-center">
+                                        <span class="text-xl mr-3 w-6 text-center">📟</span> 
+                                        <div><span class="font-bold block">Arduino Uno R3</span><span class="text-[8px] text-gray-400">Microcontrolador base</span></div>
+                                    </li>
+                                    <li class="bg-gray-900 p-2 border border-cyan-800 rounded flex items-center">
+                                        <span class="text-xl mr-3 w-6 text-center">🔌</span> 
+                                        <div><span class="font-bold block">Amp. Operacional LM358</span><span class="text-[8px] text-gray-400">Circuito integrado</span></div>
+                                    </li>
+                                    <li class="bg-gray-900 p-2 border border-cyan-800 rounded flex items-center">
+                                        <span class="text-xl mr-3 w-6 text-center">🕹️</span> 
+                                        <div><span class="font-bold block">Puente H L298N</span><span class="text-[8px] text-gray-400">Controlador de motores DC</span></div>
+                                    </li>
+                                    <li class="bg-gray-900 p-2 border border-cyan-800 rounded flex items-center">
+                                        <span class="text-xl mr-3 w-6 text-center">⚡</span> 
+                                        <div><span class="font-bold block">Multímetro Digital</span><span class="text-[8px] text-gray-400">Medición de voltaje/corriente</span></div>
+                                    </li>
+                                </ul>
+                            </div>
+                        `
+                    };
+
+                    const updateView = (vName) => {
+                        content.innerHTML = views[vName];
+                        
+                        // Actualizar UI de los botones de navegación inferiores (si aplica)
+                        const navBtns = document.querySelectorAll('.nav-btn');
+                        navBtns.forEach(btn => {
+                            if(btn.dataset.target === vName) {
+                                btn.classList.remove('text-gray-500', 'border-transparent');
+                                btn.classList.add('text-cyan-500', 'border-cyan-500');
+                            } else if (['home', 'grades', 'map'].includes(btn.dataset.target)) {
+                                btn.classList.add('text-gray-500', 'border-transparent');
+                                btn.classList.remove('text-cyan-500', 'border-cyan-500');
+                            }
+                        });
+                    };
+
+                    // Delegación de eventos para la navegación dentro del mockup
+                    const appContainer = document.getElementById('demo-canvas-area');
+                    appContainer.onclick = (e) => {
+                        const targetBtn = e.target.closest('[data-target]');
+                        if (targetBtn) {
+                            playTone(1000, 'sine', 0.05); // Sonido de click en la app
+                            updateView(targetBtn.dataset.target);
+                        }
+                    };
+
+                    updateView('home'); // Cargar vista inicial
+                }
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let timeLeft = 20;
+        let timerInterval;
+        let isAnswering = false;
+
+        const screens = {
+            start: document.getElementById('screen-start'),
+            game: document.getElementById('screen-game'),
+            results: document.getElementById('screen-results')
+        };
+        const modalFeedback = document.getElementById('modal-feedback');
+
+        function shuffle(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex !== 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        function startGame() {
+            initAudio();
+            playTone(800, 'square', 0.1);
+            screens.start.classList.add('hidden');
+            screens.game.classList.remove('hidden');
+            currentQuestionIndex = 0;
+            score = 0;
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            if (currentQuestionIndex >= allQuestions.length) {
+                showResultsScreen();
+                return;
+            }
+
+            isAnswering = false;
+            const qData = allQuestions[currentQuestionIndex];
+            
+            document.getElementById('q-counter').innerText = currentQuestionIndex + 1;
+            document.getElementById('question-text').innerText = qData.q;
+            document.getElementById('score-display').innerText = score;
+            
+            let options = [
+                { text: qData.c, correct: true },
+                { text: qData.w[0], correct: false },
+                { text: qData.w[1], correct: false },
+                { text: qData.w[2], correct: false }
+            ];
+            options = shuffle(options);
+
+            const grid = document.getElementById('answers-grid');
+            grid.innerHTML = '';
+            
+            options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = `btn-option text-white p-4 md:p-6 rounded flex items-center justify-start text-left cursor-pointer min-h-[100px]`;
+                btn.innerHTML = `
+                    <span class="text-cyan-500 font-black mr-4 text-xl">[0${index + 1}]</span>
+                    <span class="font-sans text-sm md:text-lg leading-tight flex-1">${opt.text}</span>
+                `;
+                btn.onclick = () => handleAnswer(opt.correct, btn);
+                grid.appendChild(btn);
+            });
+
+            timeLeft = 20;
+            updateTimerUI();
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerUI();
+                if (timeLeft <= 0) handleAnswer(false, null, true);
+            }, 1000);
+        }
+
+        function updateTimerUI() {
+            const timerEl = document.getElementById('timer-text');
+            timerEl.innerText = timeLeft;
+            if(timeLeft <= 5) timerEl.className = "text-2xl text-red-500 glow-text-red animate-pulse";
+            else timerEl.className = "text-2xl text-cyan-400 glow-text-cyan";
+        }
+
+        function handleAnswer(isCorrect, btnElement, isTimeout = false) {
+            if(isAnswering) return;
+            isAnswering = true;
+            clearInterval(timerInterval);
+
+            if (btnElement) {
+                btnElement.classList.add(isCorrect ? 'btn-correct' : 'btn-incorrect');
+            }
+
+            if (isCorrect) {
+                playCorrect();
+                let pts = Math.round((1000 * timeLeft) / 20);
+                if (pts < 500) pts = 500;
+                score += pts;
+                document.getElementById('score-display').innerText = score;
+            } else {
+                playWrong();
+            }
+
+            setTimeout(() => {
+                showFeedbackModal(isCorrect, isTimeout);
+            }, 800);
+        }
+
+        function showFeedbackModal(isCorrect, isTimeout) {
+            const resultText = document.getElementById('feedback-result');
+            const demoArea = document.getElementById('demo-canvas-area');
+            const qData = allQuestions[currentQuestionIndex];
+            
+            if (isCorrect) {
+                resultText.innerText = "ACCESO CONCEDIDO (CORRECTO)";
+                resultText.className = "text-xl md:text-3xl font-black uppercase tracking-widest text-green-500 glow-text-green";
+            } else {
+                resultText.innerText = isTimeout ? "TIEMPO AGOTADO" : "ACCESO DENEGADO (INCORRECTO)";
+                resultText.className = "text-xl md:text-3xl font-black uppercase tracking-widest text-red-500 glow-text-red";
+            }
+
+            // Inyectar HTML del Demo
+            demoArea.innerHTML = qData.demoHTML;
+            // Inicializar lógica JS del demo (con try/catch por seguridad en demos complejos)
+            try { qData.initDemo(); } catch(e) { console.error("Error en Demo:", e); }
+
+            modalFeedback.classList.remove('hidden');
+        }
+
+        function nextStep() {
+            playTone(600, 'square', 0.1);
+            modalFeedback.classList.add('hidden');
+            // Limpiar área del demo para evitar fugas de memoria o eventos colgados
+            document.getElementById('demo-canvas-area').innerHTML = '';
+            document.getElementById('demo-canvas-area').onclick = null; 
+            
+            currentQuestionIndex++;
+            loadQuestion();
+        }
+
+        function showResultsScreen() {
+            screens.game.classList.add('hidden');
+            screens.results.classList.remove('hidden');
+            document.getElementById('final-score').innerText = score;
+            playTone(400, 'sine', 0.2);
+            setTimeout(()=>playTone(600, 'sine', 0.2), 200);
+            setTimeout(()=>playTone(800, 'sine', 0.4), 400);
+        }
+
+        // CORRECCIÓN DE BUG: Reinicio por código en lugar de location.reload()
+        function restartSystem() {
+            playTone(300, 'sawtooth', 0.3);
+            
+            // 1. Resetear Variables
+            currentQuestionIndex = 0;
+            score = 0;
+            timeLeft = 20;
+            isAnswering = false;
+            clearInterval(timerInterval);
+            
+            // 2. Limpiar elementos visuales (modales, areas dinámicas)
+            document.getElementById('demo-canvas-area').innerHTML = '';
+            document.getElementById('demo-canvas-area').onclick = null;
+            document.getElementById('final-score').innerText = '0';
+            
+            // 3. Ocultar todas las pantallas secundarias y modales
+            modalFeedback.classList.add('hidden');
+            screens.results.classList.add('hidden');
+            screens.game.classList.add('hidden');
+            
+            // 4. Mostrar Pantalla de Inicio
+            screens.start.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
